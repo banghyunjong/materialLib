@@ -1,7 +1,7 @@
 "use client"
 
 import { useFieldArray, useFormContext } from "react-hook-form"
-import { Plus, Trash2, Camera, X } from "lucide-react"
+import { Plus, Trash2, X, Hash } from "lucide-react"
 import {
   FormControl,
   FormField,
@@ -24,11 +24,11 @@ export function SwatchList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold">색상 및 스와치 (Swatches)</h3>
+        <h3 className="text-base font-bold">색상 및 팬톤 코드 (Colors & Pantone)</h3>
         <Button
           type="button"
           size="sm"
-          onClick={() => append({ colorName: "", memo: "", swatchImg: null })}
+          onClick={() => append({ colorName: "", pantoneCode: "", memo: "" })}
         >
           <Plus className="w-4 h-4 mr-2" /> 색상 추가
         </Button>
@@ -36,46 +36,77 @@ export function SwatchList() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {fields.map((field, index) => (
-          <Card key={field.id} className="relative group">
+          <Card key={field.id} className="relative group overflow-hidden border-l-4 border-l-primary/30">
             <Button
               type="button"
               variant="destructive"
               size="icon"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              className="absolute top-2 right-2 w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
               onClick={() => remove(index)}
             >
               <X className="w-3 h-3" />
             </Button>
-            <CardContent className="p-4 space-y-4">
-              {/* Image Placeholder / Uploader */}
-              <div className="aspect-square bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                <Camera className="w-8 h-8 text-muted-foreground mb-2" />
-                <span className="text-xs text-muted-foreground">이미지 업로드</span>
-              </div>
-
+            <CardContent className="p-5 space-y-4">
               <div className="space-y-3">
                 <FormField
                   control={control}
                   name={`swatches.${index}.colorName`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">색상명</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">색상명 (Color Name)</FormLabel>
                       <FormControl>
-                        <Input placeholder="예: L/Beige" size={1} className="h-8 text-sm" {...field} />
+                        <Input placeholder="예: L/Beige" className="h-9" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={control}
+                  name={`swatches.${index}.pantoneCode`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">팬톤 코드 (Pantone Code)</FormLabel>
+                      <div className="relative">
+                        <FormControl>
+                          <Input placeholder="예: 13-0647 TCX" className="h-9 pl-8" {...field} />
+                        </FormControl>
+                        <Hash className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={control}
                   name={`swatches.${index}.memo`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs">비고 (Memo)</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">비고 (Memo)</FormLabel>
                       <FormControl>
-                        <Input placeholder="기타 특징" className="h-8 text-sm" {...field} />
+                        <Input placeholder="특이사항 입력" className="h-9 border-dashed" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name={`swatches.${index}.styleCode`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">스타일 코드 연결 (Style Code)</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input placeholder="연결할 스타일 코드" className="h-9" {...field} />
+                        </FormControl>
+                        <Button type="button" variant="outline" size="sm" className="h-9 shrink-0">
+                          조회
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

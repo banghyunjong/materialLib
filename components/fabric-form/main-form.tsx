@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Save } from "lucide-react"
+import { Save, ShoppingCart } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
@@ -32,16 +32,20 @@ const formSchema = z.object({
   })).min(1, "최소 하나 이상의 소재를 입력하세요."),
   swatches: z.array(z.object({
     colorName: z.string().min(1, "색상명을 입력하세요."),
+    pantoneCode: z.string().optional(),
     memo: z.string().optional(),
-    swatchImg: z.any().optional(),
+    styleCode: z.string().optional(),
   })),
+  linkedStyleCodes: z.array(z.object({
+    code: z.string().min(1, "스타일 코드를 입력하세요."),
+  })).optional(),
 })
 
 export default function FabricForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      brand: "ROEM",
+      brand: "SPAO",
       seasonYear: "2025",
       seasonMonth: "1",
       seasonTerm: "1",
@@ -54,7 +58,8 @@ export default function FabricForm() {
       categoryMajor: "",
       categoryMiddle: "",
       compositions: [{ fiberType: "Polyester", percentage: 100 }],
-      swatches: [{ colorName: "", memo: "" }],
+      swatches: [{ colorName: "", pantoneCode: "", memo: "", styleCode: "" }],
+      linkedStyleCodes: [],
     },
   })
 
@@ -77,10 +82,16 @@ export default function FabricForm() {
             <h1 className="text-2xl font-bold tracking-tight">원단 마스터 등록</h1>
             <p className="text-sm text-muted-foreground">새로운 원단 정보를 시스템에 등록합니다.</p>
           </div>
-          <Button type="submit" size="lg" className="shadow-lg">
-            <Save className="w-4 h-4 mr-2" />
-            마스터 저장
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="lg" onClick={() => alert("발주 시스템으로 이동합니다.")}>
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              발주
+            </Button>
+            <Button type="submit" size="lg" className="shadow-lg">
+              <Save className="w-4 h-4 mr-2" />
+              마스터 저장
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-10">
