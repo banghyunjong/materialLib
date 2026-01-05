@@ -22,26 +22,26 @@ const formSchema = z.object({
   seasonMonth: z.string().min(1, "월을 선택해주세요."),
   seasonTerm: z.string().min(1, "시즌을 선택해주세요."),
   artNo: z.string().min(1, "품명을 입력해주세요."),
-  vendorName: z.string().optional(),
-  width: z.string().optional(),
-  weight: z.string().optional(),
-  price: z.string().optional(),
+  vendorName: z.string().default(""),
+  width: z.string().default(""),
+  weight: z.string().default(""),
+  price: z.string().default(""),
   currency: z.string().default("USD"),
-  categoryMajor: z.string().optional(),
-  categoryMiddle: z.string().optional(),
+  categoryMajor: z.string().default(""),
+  categoryMiddle: z.string().default(""),
   compositions: z.array(z.object({
     fiberType: z.string().min(1, "소재명을 입력하세요."),
     percentage: z.number().min(1).max(100),
   })).min(1, "최소 하나 이상의 소재를 입력하세요."),
   swatches: z.array(z.object({
     colorName: z.string().min(1, "색상명을 입력하세요."),
-    pantoneCode: z.string().optional(),
-    memo: z.string().optional(),
-    styleCode: z.string().optional(),
+    pantoneCode: z.string().default(""),
+    memo: z.string().default(""),
+    styleCode: z.string().default(""),
   })),
   linkedStyleCodes: z.array(z.object({
     code: z.string().min(1, "스타일 코드를 입력하세요."),
-  })).optional(),
+  })).default([]),
 })
 
 export default function FabricForm() {
