@@ -38,7 +38,7 @@ export function HeaderSection() {
               name="brand"
               render={({ field }) => (
                 <FormItem className="min-w-[120px]">
-                  <FormLabel>브랜드</FormLabel>
+                  <FormLabel>브랜드<span className="text-red-500 ml-1">*</span></FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -65,7 +65,7 @@ export function HeaderSection() {
                 name="seasonYear"
                 render={({ field }) => (
                   <FormItem className="flex-[1.2]">
-                    <FormLabel>연도</FormLabel>
+                    <FormLabel>연도<span className="text-red-500 ml-1">*</span></FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -84,13 +84,13 @@ export function HeaderSection() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={control}
                 name="seasonMonth"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>월</FormLabel>
+                    <FormLabel>월<span className="text-red-500 ml-1">*</span></FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -115,7 +115,7 @@ export function HeaderSection() {
                 name="seasonTerm"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel>시즌</FormLabel>
+                    <FormLabel>시즌<span className="text-red-500 ml-1">*</span></FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -151,7 +151,7 @@ export function HeaderSection() {
             name="artNo"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>품명 (Art No)</FormLabel>
+                <FormLabel>품명 (Art No)<span className="text-red-500 ml-1">*</span></FormLabel>
                 <div className="flex gap-2">
                   <FormControl>
                     <Input placeholder="원단 품명" {...field} />
@@ -230,8 +230,8 @@ export function HeaderSection() {
                     control={control}
                     name="currency"
                     render={({ field: currencyField }) => (
-                      <Select 
-                        onValueChange={currencyField.onChange} 
+                      <Select
+                        onValueChange={currencyField.onChange}
                         value={currencyField.value}
                         defaultValue={currencyField.value}
                       >

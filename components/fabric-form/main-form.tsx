@@ -1,17 +1,20 @@
 "use client"
 
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Save, ShoppingCart } from "lucide-react"
+import { Save, ShoppingCart, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
 import { Separator } from "@/components/ui/separator"
+// import { useToast } from "@/hooks/use-toast"
 
 import { HeaderSection } from "./header-section"
 import { FiberComposer } from "./fiber-composer"
 import { SwatchList } from "./swatch-list"
+import { supabase } from "@/lib/supabase"
 
 const formSchema = z.object({
   brand: z.string().min(1, "브랜드를 선택해주세요."),
@@ -42,6 +45,9 @@ const formSchema = z.object({
 })
 
 export default function FabricForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  // const { toast } = useToast() // Commented out until I verify toast availability
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -63,14 +69,97 @@ export default function FabricForm() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     const total = values.compositions.reduce((sum, item) => sum + item.percentage, 0)
     if (total !== 100) {
       alert(`혼용률 합계가 ${total}%입니다. 100%여야 저장이 가능합니다.`)
       return
     }
-    console.log("Submit Values:", values)
-    alert("콘솔에 데이터가 출력되었습니다. (Supabase 연결 전)")
+
+    setIsSubmitting(true)
+
+    try {
+      // 1. Insert Master Data
+      const { data: masterData, error: masterError } = await supabase
+        .from('fabric_master')
+        .insert({
+          brand: values.brand,
+          season_year: values.seasonYear, // Schema says TEXT
+          season_month: values.seasonMonth,
+          season_term: values.seasonTerm,
+          art_no: values.artNo,
+          vendor_name: values.vendorName,
+          category_major: values.categoryMajor,
+          category_middle: values.categoryMiddle,
+          width: values.width,
+          weight: values.weight,
+          price: values.price ? parseFloat(values.price) : null,
+          currency: values.currency,
+        })
+        .select()
+        .single()
+
+      if (masterError) throw masterError
+      if (!masterData) throw new Error("No data returned from master insert")
+
+      const fabricId = masterData.id
+
+      // 2. Insert Mixing Ratios
+      const mixingData = values.compositions.map(comp => ({
+        fabric_id: fabricId,
+        // CODE GENERATION: "Cotton" -> "CO", "Polyester" -> "PO"
+        fiber_type: comp.fiberType.substring(0, 2).toUpperCase(),
+        percentage: comp.percentage,
+      }))
+
+      if (mixingData.length > 0) {
+        const { error: mixingError } = await supabase
+          .from('fabric_mixing_ratio')
+          .insert(mixingData)
+
+        if (mixingError) throw mixingError
+      }
+
+      // 3. Insert Colors (Fabric Color - formerly detail)
+      const colorData = values.swatches.map(swatch => ({
+        fabric_id: fabricId,
+        color_name: swatch.colorName,
+        pantone_code: swatch.pantoneCode,
+        style_code: swatch.styleCode,
+        memo: swatch.memo,
+      }))
+
+      if (colorData.length > 0) {
+        const { error: colorError } = await supabase
+          .from('fabric_color')
+          .insert(colorData)
+
+        if (colorError) throw colorError
+      }
+
+      // 4. Insert Style Links (Common Style Codes)
+      if (values.linkedStyleCodes && values.linkedStyleCodes.length > 0) {
+        const linkData = values.linkedStyleCodes.map(link => ({
+          fabric_id: fabricId,
+          style_code: link.code,
+        }))
+
+        const { error: linkError } = await supabase
+          .from('fabric_style_link')
+          .insert(linkData)
+
+        if (linkError) throw linkError
+      }
+
+      alert("성공적으로 저장되었습니다!")
+      // form.reset() // Optional: reset form after success
+
+    } catch (error: any) {
+      console.error("Save Error:", error)
+      alert(`저장 중 오류가 발생했습니다: ${error.message}`)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -87,9 +176,18 @@ export default function FabricForm() {
               <ShoppingCart className="w-4 h-4 mr-2" />
               발주
             </Button>
-            <Button type="submit" size="lg" className="shadow-lg">
-              <Save className="w-4 h-4 mr-2" />
-              마스터 저장
+            <Button type="submit" size="lg" className="shadow-lg" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  마스터 저장
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -53,7 +53,7 @@ export function SwatchList() {
                   name={`swatches.${index}.colorName`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">색상명 (Color Name)</FormLabel>
+                      <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">색상명 (Color Name)<span className="text-red-500 ml-1">*</span></FormLabel>
                       <FormControl>
                         <Input placeholder="예: L/Beige" className="h-9" {...field} />
                       </FormControl>
@@ -61,7 +61,7 @@ export function SwatchList() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={control}
                   name={`swatches.${index}.pantoneCode`}
