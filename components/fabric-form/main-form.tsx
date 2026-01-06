@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Save, ShoppingCart, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Form } from "@/components/ui/form"
@@ -45,6 +46,7 @@ const formSchema = z.object({
 })
 
 export default function FabricForm() {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   // const { toast } = useToast() // Commented out until I verify toast availability
 
@@ -151,8 +153,13 @@ export default function FabricForm() {
         if (linkError) throw linkError
       }
 
-      alert("성공적으로 저장되었습니다!")
-      // form.reset() // Optional: reset form after success
+      // alert("성공적으로 저장되었습니다!") // Replaced with logic below
+      
+      if (confirm("성공적으로 저장되었습니다! 발주로 바로 이동하시겠습니까?")) {
+        router.push(`/order/create?fabricId=${fabricId}`)
+      } else {
+        // form.reset() // Optional
+      }
 
     } catch (error: any) {
       console.error("Save Error:", error)
