@@ -48,7 +48,7 @@ export default function FabricForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   // const { toast } = useToast() // Commented out until I verify toast availability
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       brand: "SPAO",
