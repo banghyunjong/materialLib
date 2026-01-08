@@ -15,13 +15,10 @@ import { Separator } from "@/components/ui/separator"
 import { HeaderSection } from "./header-section"
 import { FiberComposer } from "./fiber-composer"
 import { SwatchList } from "./swatch-list"
+import { StyleCodeDialog } from "./style-code-dialog"
 import { supabase } from "@/lib/supabase"
 
 const formSchema = z.object({
-  brand: z.string().min(1, "브랜드를 선택해주세요."),
-  seasonYear: z.string().min(1, "연도를 선택해주세요."),
-  seasonMonth: z.string().min(1, "월을 선택해주세요."),
-  seasonTerm: z.string().min(1, "시즌을 선택해주세요."),
   artNo: z.string().min(1, "품명을 입력해주세요."),
   vendorName: z.string().default(""),
   width: z.string().default(""),
@@ -30,6 +27,14 @@ const formSchema = z.object({
   currency: z.string().default("USD"),
   categoryMajor: z.string().default(""),
   categoryMiddle: z.string().default(""),
+  // Physical Properties
+  yarnCountWarp: z.string().default(""),
+  yarnCountWeft: z.string().default(""),
+  densityWarp: z.string().default(""),
+  densityWeft: z.string().default(""),
+  shrinkage: z.string().default(""),
+  colorFastness: z.string().default(""),
+  
   compositions: z.array(z.object({
     fiberType: z.string().min(1, "소재명을 입력하세요."),
     percentage: z.number().min(1).max(100),
@@ -53,10 +58,6 @@ export default function FabricForm() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      brand: "SPAO",
-      seasonYear: "2025",
-      seasonMonth: "1",
-      seasonTerm: "1",
       artNo: "",
       vendorName: "",
       width: "",
@@ -65,7 +66,15 @@ export default function FabricForm() {
       currency: "USD",
       categoryMajor: "",
       categoryMiddle: "",
-      compositions: [{ fiberType: "Polyester", percentage: 100 }],
+      // Physical Properties
+      yarnCountWarp: "",
+      yarnCountWeft: "",
+      densityWarp: "",
+      densityWeft: "",
+      shrinkage: "",
+      colorFastness: "",
+      
+      compositions: [{ fiberType: "PES", percentage: 100 }],
       swatches: [{ colorName: "", pantoneCode: "", memo: "", styleCode: "" }],
       linkedStyleCodes: [],
     },
@@ -85,14 +94,18 @@ export default function FabricForm() {
       const { data: masterData, error: masterError } = await supabase
         .from('fabric_master')
         .insert({
-          brand: values.brand,
-          season_year: values.seasonYear, // Schema says TEXT
-          season_month: values.seasonMonth,
-          season_term: values.seasonTerm,
           art_no: values.artNo,
           vendor_name: values.vendorName,
           category_major: values.categoryMajor,
           category_middle: values.categoryMiddle,
+          // Physical Properties
+          yarn_count_warp: values.yarnCountWarp,
+          yarn_count_weft: values.yarnCountWeft,
+          density_warp: values.densityWarp,
+          density_weft: values.densityWeft,
+          shrinkage: values.shrinkage,
+          color_fastness: values.colorFastness,
+          
           width: values.width,
           weight: values.weight,
           price: values.price ? parseFloat(values.price) : null,
@@ -109,8 +122,7 @@ export default function FabricForm() {
       // 2. Insert Mixing Ratios
       const mixingData = values.compositions.map(comp => ({
         fabric_id: fabricId,
-        // CODE GENERATION: "Cotton" -> "CO", "Polyester" -> "PO"
-        fiber_type: comp.fiberType.substring(0, 2).toUpperCase(),
+        fiber_type: comp.fiberType, // Use exact code
         percentage: comp.percentage,
       }))
 
@@ -162,8 +174,8 @@ export default function FabricForm() {
       }
 
     } catch (error: any) {
-      console.error("Save Error:", error)
-      alert(`저장 중 오류가 발생했습니다: ${error.message}`)
+      console.error("Save Error:", JSON.stringify(error, null, 2))
+      alert(`저장 중 오류가 발생했습니다: ${error.message || error.details || "알 수 없는 오류"}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -214,6 +226,16 @@ export default function FabricForm() {
               <h2 className="text-lg font-semibold">소재 구성</h2>
             </div>
             <FiberComposer />
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+               <div className="w-1 h-6 bg-primary rounded-full" />
+               <h2 className="text-lg font-semibold">스타일 코드 연결</h2>
+            </div>
+            <div className="bg-white p-6 rounded-lg border shadow-sm">
+               <StyleCodeDialog />
+            </div>
           </section>
 
           <Separator />

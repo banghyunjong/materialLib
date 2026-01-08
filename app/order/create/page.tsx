@@ -9,10 +9,6 @@ import { Printer, Save, ArrowLeft } from "lucide-react"
 
 interface FabricMaster {
   id: string
-  brand: string
-  season_year: string
-  season_month: string
-  season_term: string
   art_no: string
   vendor_name: string
   width: string
@@ -174,14 +170,6 @@ function OrderCreateContent() {
             <div className="border border-gray-300 rounded-sm p-4">
               <h3 className="font-bold text-lg mb-2 bg-gray-100 p-1 border-b">Buyer (발주자)</h3>
               <div className="space-y-1 text-sm">
-                <div className="grid grid-cols-3">
-                  <span className="font-semibold text-gray-600">Brand:</span>
-                  <span className="col-span-2 font-bold">{fabric.brand}</span>
-                </div>
-                <div className="grid grid-cols-3">
-                  <span className="font-semibold text-gray-600">Season:</span>
-                  <span className="col-span-2">{fabric.season_year} {fabric.season_month}월 ({fabric.season_term}차)</span>
-                </div>
                 <div className="grid grid-cols-3">
                   <span className="font-semibold text-gray-600">Date:</span>
                   <span className="col-span-2">{new Date().toLocaleDateString()}</span>

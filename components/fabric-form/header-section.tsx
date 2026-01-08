@@ -1,6 +1,7 @@
-"use client"
-
+import { useState } from "react"
 import { useFormContext } from "react-hook-form"
+import { supabase } from "@/lib/supabase"
+import { Loader2, Check, AlertCircle } from "lucide-react"
 import {
   FormControl,
   FormField,
@@ -18,133 +19,51 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { StyleCodeDialog } from "./style-code-dialog"
-
-const BRANDS = ["ROEM", "SPAO", "MIXXO", "WHO.A.U", "NEW BALANCE"]
-const SEASONS = ["1", "2", "3", "4"]
 
 export function HeaderSection() {
-  const { control } = useFormContext()
+  const { control, getValues, setError, clearErrors } = useFormContext()
+  const [checking, setChecking] = useState(false)
+  const [dupStatus, setDupStatus] = useState<"idle" | "available" | "duplicate">("idle")
+
+  const checkDuplication = async () => {
+    const artNo = getValues("artNo")
+    if (!artNo) {
+      setError("artNo", { message: "품명을 입력해주세요." })
+      return
+    }
+
+    setChecking(true)
+    setDupStatus("idle")
+    
+    try {
+      const { data, error } = await supabase
+        .from("fabric_master")
+        .select("id")
+        .eq("art_no", artNo)
+        .maybeSingle()
+
+      if (error) throw error
+
+      if (data) {
+        setDupStatus("duplicate")
+        setError("artNo", { message: "이미 존재하는 품명입니다." })
+      } else {
+        setDupStatus("available")
+        clearErrors("artNo")
+      }
+    } catch (err) {
+      console.error(err)
+      alert("중복 확인 중 오류가 발생했습니다.")
+    } finally {
+      setChecking(false)
+    }
+  }
 
   return (
     <Card>
       <CardContent className="pt-6 space-y-6">
-        {/* Row 1: Brand & Season | Connect Style Code */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-          <div className="flex gap-4 items-end">
-            {/* Brand Selection */}
-            <FormField
-              control={control}
-              name="brand"
-              render={({ field }) => (
-                <FormItem className="min-w-[120px]">
-                  <FormLabel>브랜드<span className="text-red-500 ml-1">*</span></FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Brand" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {BRANDS.map((brand) => (
-                        <SelectItem key={brand} value={brand}>
-                          {brand}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Season Group */}
-            <div className="flex gap-2 flex-1">
-              <FormField
-                control={control}
-                name="seasonYear"
-                render={({ field }) => (
-                  <FormItem className="flex-[1.2]">
-                    <FormLabel>연도<span className="text-red-500 ml-1">*</span></FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="YY" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[2024, 2025, 2026].map((year) => (
-                          <SelectItem key={year} value={year.toString()}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="seasonMonth"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>월<span className="text-red-500 ml-1">*</span></FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="MM" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                          <SelectItem key={month} value={month.toString()}>
-                            {month}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="seasonTerm"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>시즌<span className="text-red-500 ml-1">*</span></FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Term" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {SEASONS.map((term) => (
-                          <SelectItem key={term} value={term}>
-                            {term}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Connect Style Code Button (Dialog) */}
-          <div className="pb-[2px]">
-            <StyleCodeDialog />
-          </div>
-        </div>
-
-        {/* Row 2: Art No & Vendor */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Row 2: Art No, Vendor, Price */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Art No */}
           <FormField
             control={control}
@@ -154,13 +73,44 @@ export function HeaderSection() {
                 <FormLabel>품명 (Art No)<span className="text-red-500 ml-1">*</span></FormLabel>
                 <div className="flex gap-2">
                   <FormControl>
-                    <Input placeholder="원단 품명" {...field} />
+                    <Input 
+                      placeholder="원단 품명" 
+                      {...field} 
+                      onChange={(e) => {
+                        field.onChange(e)
+                        setDupStatus("idle") // Reset status on change
+                      }}
+                    />
                   </FormControl>
-                  <Button type="button" variant="outline" className="shrink-0">
-                    중복확인
+                  <Button 
+                    type="button" 
+                    variant={dupStatus === "available" ? "default" : "outline"} 
+                    className="shrink-0 min-w-[80px]"
+                    onClick={checkDuplication}
+                    disabled={checking}
+                  >
+                    {checking ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : dupStatus === "available" ? (
+                      <>
+                        <Check className="w-4 h-4 mr-1" /> OK
+                      </>
+                    ) : (
+                      "중복확인"
+                    )}
                   </Button>
                 </div>
                 <FormMessage />
+                {dupStatus === "duplicate" && (
+                  <p className="text-xs text-destructive flex items-center mt-1">
+                    <AlertCircle className="w-3 h-3 mr-1" /> 중복
+                  </p>
+                )}
+                {dupStatus === "available" && (
+                   <p className="text-xs text-green-600 flex items-center mt-1">
+                    <Check className="w-3 h-3 mr-1" /> 사용가능
+                  </p>
+                )}
               </FormItem>
             )}
           />
@@ -184,46 +134,13 @@ export function HeaderSection() {
               </FormItem>
             )}
           />
-        </div>
-
-        {/* Row 3: Width, Weight, Price */}
-        <div className="flex gap-6">
-          {/* Width */}
-          <FormField
-            control={control}
-            name="width"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>규격 (Width)</FormLabel>
-                <FormControl>
-                  <Input placeholder="예: 58/60 inch" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Weight */}
-          <FormField
-            control={control}
-            name="weight"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>중량 (Weight)</FormLabel>
-                <FormControl>
-                  <Input placeholder="예: 250 g/y" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           {/* Price */}
           <FormField
             control={control}
             name="price"
             render={({ field }) => (
-              <FormItem className="flex-1">
+              <FormItem>
                 <FormLabel>단가 (Price)</FormLabel>
                 <div className="flex gap-2">
                   <FormField

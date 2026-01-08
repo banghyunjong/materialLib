@@ -1,7 +1,7 @@
 "use client"
 
 import { useFieldArray, useFormContext } from "react-hook-form"
-import { Plus, Trash2, AlertCircle, CheckCircle2, Check, ChevronsUpDown } from "lucide-react"
+import { Trash2, AlertCircle, CheckCircle2, ChevronsUpDown, Check } from "lucide-react"
 import {
   FormControl,
   FormField,
@@ -13,13 +13,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Command,
   CommandEmpty,
@@ -35,43 +28,86 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-const COMMON_FIBERS = ["Cotton", "Polyester", "Rayon", "Nylon", "Spandex", "Wool", "Linen", "Silk", "Acrylic", "Acetate"]
+const FIBER_CODES = [
+  { code: "CO", label: "Cotton" },
+  { code: "LI", label: "Linen" },
+  { code: "WO", label: "Wool" },
+  { code: "SE", label: "Silk" },
+  { code: "PES", label: "Polyester" },
+  { code: "PA", label: "Polyamide (Nylon)" },
+  { code: "PU", label: "Polyurethane" },
+  { code: "EL", label: "Elastane (Spandex)" },
+  { code: "PAN", label: "Acrylic" },
+  { code: "CV", label: "Viscose" },
+  { code: "CMD", label: "Modal" },
+  { code: "CLY", label: "Lyocell" },
+]
 
-const CATEGORIES: Record<string, { label: string; value: string }[]> = {
-  WOVEN: [
-    { label: "평직 (Plain)", value: "PLAIN" },
-    { label: "능직 (Twill)", value: "TWILL" },
-    { label: "수자직 (Satin)", value: "SATIN" },
-    { label: "이중직 (Double)", value: "DOUBLE" },
-    { label: "자카드 (Jacquard)", value: "JACQUARD" },
-    { label: "기타 (Other)", value: "OTHER" },
-  ],
-  KNIT: [
-    { label: "싱글 (Single Jersey)", value: "SINGLE" },
-    { label: "리브 (Rib)", value: "RIB" },
-    { label: "양면 (Interlock)", value: "INTERLOCK" },
-    { label: "쭈리 (Terry)", value: "TERRY" },
-    { label: "트리코트 (Tricot)", value: "TRICOT" },
-    { label: "기타 (Other)", value: "OTHER" },
-  ],
-  OTHERS: [
-    { label: "부직포 (Non-woven)", value: "NON_WOVEN" },
-    { label: "가죽 (Leather)", value: "LEATHER" },
-    { label: "털 (Fur)", value: "FUR" },
-    { label: "레이스 (Lace)", value: "LACE" },
-  ],
-}
+const FABRIC_PROPERTIES = [
+  {
+    group: "평직 (Plain)",
+    items: [
+      { code: "PL", label: "기본 평직" },
+      { code: "PO", label: "옥스포드" },
+      { code: "PB", label: "바스켓" },
+      { code: "PR", label: "립스탑" },
+      { code: "PP", label: "포플린" },
+      { code: "PC", label: "캔버스" },
+    ]
+  },
+  {
+    group: "능직 (Twill)",
+    items: [
+      { code: "TW", label: "기본 능직" },
+      { code: "TD", label: "데님" },
+      { code: "TH", label: "헤링본" },
+      { code: "TB", label: "브로큰 트윌" },
+      { code: "TS", label: "서지" },
+    ]
+  },
+  {
+    group: "주자직 (Satin)",
+    items: [
+      { code: "SA", label: "새틴" },
+      { code: "SN", label: "면 주자" },
+      { code: "SC", label: "크레이프 백" },
+    ]
+  },
+  {
+    group: "변형 (Fancy)",
+    items: [
+      { code: "DO", label: "도비" },
+      { code: "DP", label: "피케" },
+      { code: "JA", label: "자카드" },
+      { code: "VL", label: "벨벳/벨로아" },
+      { code: "CO", label: "코듀로이" },
+      { code: "SE", label: "시어서커" },
+    ]
+  },
+  {
+    group: "니트 (Knit)",
+    items: [
+      { code: "KS", label: "싱글 저지" },
+      { code: "KI", label: "인터록" },
+      { code: "KR", label: "립 (시보리)" },
+    ]
+  },
+  {
+    group: "기타 (Etc)",
+    items: [
+      { code: "ZZ", label: "기타" },
+    ]
+  }
+]
 
 export function FiberComposer() {
   const { control, watch, setValue } = useFormContext()
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "compositions",
   })
 
   const compositions = watch("compositions") || []
-  const selectedMajor = watch("categoryMajor")
-
   const totalPercentage = compositions.reduce(
     (sum: number, item: any) => sum + (Number(item.percentage) || 0),
     0
@@ -79,9 +115,15 @@ export function FiberComposer() {
 
   const isValid = totalPercentage === 100
 
-  const handleShortcut = (fiber: string) => {
-    // 100% 숏컷: 기존 내용 지우고 하나로 세팅
-    setValue("compositions", [{ fiberType: fiber, percentage: 100 }])
+  const handleAddFiber = (fiberCode: string) => {
+    append({ fiberType: fiberCode, percentage: 0 })
+  }
+
+  const handleSet100 = () => {
+    if (fields.length === 0) return
+    const lastIndex = fields.length - 1
+    const currentFiber = compositions[lastIndex]?.fiberType || ""
+    update(lastIndex, { fiberType: currentFiber, percentage: 100 })
   }
 
   return (
@@ -101,82 +143,36 @@ export function FiberComposer() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Category Section */}
-        <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
-          <FormField
-            control={control}
-            name="categoryMajor"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>대분류 (Major)</FormLabel>
-                <Select
-                  onValueChange={(val) => {
-                    field.onChange(val)
-                    setValue("categoryMiddle", "") // Reset middle category
-                  }}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="대분류 선택" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="WOVEN">직물 (Woven)</SelectItem>
-                    <SelectItem value="KNIT">편물 (Knit)</SelectItem>
-                    <SelectItem value="OTHERS">기타 (Others)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={control}
-            name="categoryMiddle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>중분류 (Middle)</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  disabled={!selectedMajor}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={selectedMajor ? "중분류 선택" : "대분류를 먼저 선택하세요"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {selectedMajor && CATEGORIES[selectedMajor]?.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Shortcuts */}
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs text-muted-foreground self-center mr-1">Quick 100%:</span>
-          {COMMON_FIBERS.slice(0, 6).map((fiber) => (
-            <Button
-              key={fiber}
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => handleShortcut(fiber)}
-            >
-              {fiber} 100%
-            </Button>
-          ))}
+        
+        {/* Toolbar: Fibers on Left, 100% on Right */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+          <div className="flex flex-wrap gap-2 flex-1">
+            {FIBER_CODES.map((fiber) => (
+              <Button
+                key={fiber.code}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 font-semibold min-w-[3rem]"
+                title={fiber.label}
+                onClick={() => handleAddFiber(fiber.code)}
+              >
+                {fiber.code}
+              </Button>
+            ))}
+          </div>
+          
+          <div className="w-full md:w-auto border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4">
+             <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className="w-full md:w-auto font-bold bg-slate-900 hover:bg-slate-800"
+                onClick={handleSet100}
+              >
+                100%
+              </Button>
+          </div>
         </div>
 
         {/* Dynamic List */}
@@ -195,71 +191,39 @@ export function FiberComposer() {
                             variant="outline"
                             role="combobox"
                             className={cn(
-                              "w-full justify-between",
+                              "w-full justify-between font-mono",
                               !field.value && "text-muted-foreground"
                             )}
                           >
                             {field.value
-                              ? COMMON_FIBERS.find(
-                                (fiber) => fiber.toLowerCase() === field.value.toLowerCase()
-                              ) || field.value
-                              : "소재 선택 (Type to search)"}
+                              ? FIBER_CODES.find(
+                                (fiber) => fiber.code === field.value
+                              )?.code || field.value
+                              : "소재 선택"}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-[300px] p-0">
                         <Command>
-                          <CommandInput
-                            placeholder="소재 검색..."
-                            onValueChange={(search) => {
-                              // Allow custom input if not found in list (simple handling)
-                              if (search && !COMMON_FIBERS.some(f => f.toLowerCase().includes(search.toLowerCase()))) {
-                                // logic to allow setting value could be here or just use the input value itself
-                                // For now, let's just let them pick or we might need a way to set custom.
-                                // Actually, shadcn command input is for filtering.
-                                // To allow custom input in Combobox is a bit tricky with strict Command.
-                                // We will use the approach: if no match, show 'Create "search"'.
-                              }
-                            }}
-                          />
+                          <CommandInput placeholder="소재 검색..." />
                           <CommandList>
-                            <CommandEmpty>
-                              <Button
-                                variant="ghost"
-                                className="w-full justify-start h-8 font-normal"
-                                onClick={() => {
-                                  // This is a workaround to get the typed value if possible, 
-                                  // but standard CommandInput doesn't expose it easily to the click handler of empty.
-                                  // A simpler way for "Free Text + Autocomplete" is using a DataList or just simple suggestions.
-                                  // Given the constraints, I will make the CommandInput behave as a search, and if they press Enter, we might need a custom item.
-                                  // Let's stick to selecting from list for now, or use the Input directly if they want custom?
-                                  // User said "c -> cotton", implying autocomplete.
-                                  // I'll add a 'Direct Input' option if they really need it, but for now standard list.
-                                }}
-                              >
-                                목록에 없음 (직접 입력은 아직 미지원)
-                              </Button>
-                            </CommandEmpty>
+                            <CommandEmpty>검색 결과 없음</CommandEmpty>
                             <CommandGroup>
-                              {COMMON_FIBERS.map((fiber) => (
+                              {FIBER_CODES.map((fiber) => (
                                 <CommandItem
-                                  value={fiber}
-                                  key={fiber}
+                                  value={fiber.code + " " + fiber.label}
+                                  key={fiber.code}
                                   onSelect={() => {
-                                    field.onChange(fiber)
-                                    // Close popover handled by wrapping component usually, but here we might need state.
-                                    // Since we are inside map, managing open state for each row is complex.
-                                    // We can rely on basic Radix behavior or use a controlled component wrapper.
-                                    // FOR SIMPLICITY: We rely on the loose interactions. The user clicks, it sets value.
-                                    // To close, they click outside. (A bit hacky but works for MVP without extra state).
+                                    field.onChange(fiber.code)
                                   }}
                                 >
-                                  {fiber}
+                                  <span className="font-bold w-12">{fiber.code}</span>
+                                  <span className="text-muted-foreground text-xs">{fiber.label}</span>
                                   <Check
                                     className={cn(
                                       "ml-auto h-4 w-4",
-                                      fiber.toLowerCase() === field.value?.toLowerCase()
+                                      fiber.code === field.value
                                         ? "opacity-100"
                                         : "opacity-0"
                                     )}
@@ -285,7 +249,7 @@ export function FiberComposer() {
                         <Input
                           type="number"
                           placeholder="0"
-                          className="pr-7"
+                          className="pr-7 font-mono text-right"
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                         />
@@ -302,23 +266,200 @@ export function FiberComposer() {
                 size="icon"
                 className="text-muted-foreground hover:text-destructive"
                 onClick={() => remove(index)}
-                disabled={fields.length === 1}
+                disabled={fields.length === 0}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           ))}
+          
+          {fields.length === 0 && (
+            <div className="text-center py-6 border-2 border-dashed rounded-lg text-muted-foreground text-sm">
+              상단의 소재 버튼을 클릭하여 혼용률을 입력하세요.
+            </div>
+          )}
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full border-dashed"
-          onClick={() => append({ fiberType: "", percentage: 0 })}
-        >
-          <Plus className="w-4 h-4 mr-2" /> 소재 추가
-        </Button>
+        {/* Fabric Property Selector (All Visible Grid) */}
+        <div className="mt-8 border-t pt-6">
+          <h3 className="text-sm font-bold mb-4">원단 속성 선택 (Fabric Property)</h3>
+          <FormField
+            control={control}
+            name="categoryMiddle"
+            render={({ field }) => (
+              <FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {FABRIC_PROPERTIES.map((group) => (
+                    <div key={group.group} className="space-y-3 p-4 bg-slate-50/50 rounded-lg border">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">
+                        {group.group}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {group.items.map((item) => {
+                          const isSelected = field.value === item.code
+                          return (
+                            <Button
+                              key={item.code}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              className={cn(
+                                "h-auto py-2 px-2 flex flex-col items-start gap-0.5 text-left",
+                                isSelected ? "bg-slate-900 border-slate-900 shadow-sm" : "bg-white hover:bg-slate-100 text-slate-600 border-slate-200"
+                              )}
+                              onClick={() => {
+                                field.onChange(item.code);
+                                setValue("categoryMajor", group.group);
+                              }}
+                            >
+                              <span className={cn("text-xs font-extrabold", isSelected ? "text-white" : "text-slate-900")}>
+                                {item.code}
+                              </span>
+                              <span className={cn("text-[10px] truncate w-full", isSelected ? "text-slate-300" : "text-muted-foreground")}>
+                                {item.label}
+                              </span>
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Physical Properties (New Section) */}
+        <div className="mt-8 border-t pt-6">
+          <h3 className="text-sm font-bold mb-4">물성 정보 (Physical Properties)</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Yarn Count */}
+            <div className="space-y-3 bg-slate-50/50 p-4 rounded-lg border">
+               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">번수 (Yarn Count)</h4>
+               <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={control}
+                    name="yarnCountWarp"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">경사 (Warp)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: CM 40s" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name="yarnCountWeft"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">위사 (Weft)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: 75D/36F" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+               </div>
+            </div>
+
+            {/* Density */}
+            <div className="space-y-3 bg-slate-50/50 p-4 rounded-lg border">
+               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">밀도 (Density)</h4>
+               <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={control}
+                    name="densityWarp"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">경사 (Warp)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: 110" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name="densityWeft"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">위사 (Weft)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: 90" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+               </div>
+            </div>
+
+            {/* Quality Specs */}
+            <div className="col-span-1 md:col-span-2 space-y-3 bg-slate-50/50 p-4 rounded-lg border">
+               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b pb-2">품질 스펙 (Quality Specs)</h4>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={control}
+                    name="shrinkage"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">수축율 (Shrinkage)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: -3%" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name="colorFastness"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1">
+                        <FormLabel className="text-xs">견뢰도 (Color Fastness)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="예: 4-5 Grade" className="h-8 text-sm" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+               </div>
+            </div>
+          </div>
+
+          {/* Width & Weight (Moved from Header) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 bg-slate-50/50 p-4 rounded-lg border">
+              <FormField
+                control={control}
+                name="width"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">규격 (Width)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="예: 58/60 inch" className="h-9" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name="weight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">중량 (Weight)</FormLabel>
+                    <div className="flex gap-2 relative">
+                        <FormControl>
+                          <Input placeholder="예: 250" className="h-9 pr-12" {...field} />
+                        </FormControl>
+                        <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">g/y</span>
+                    </div>
+                  </FormItem>
+                )}
+              />
+          </div>
+        </div>
 
         {!isValid && totalPercentage > 0 && (
           <p className="text-xs text-destructive font-medium">

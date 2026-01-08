@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
   title: "Fabric Master DB",
@@ -13,7 +14,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="flex min-h-screen">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto bg-slate-50/50">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
