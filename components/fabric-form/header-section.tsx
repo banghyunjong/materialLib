@@ -62,7 +62,7 @@ export function HeaderSection() {
   return (
     <Card>
       <CardContent className="pt-6 space-y-6">
-        {/* Row 2: Art No, Vendor, Price */}
+        {/* Row 2: Art No, Material Alias, Vendor */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Art No */}
           <FormField
@@ -115,6 +115,21 @@ export function HeaderSection() {
             )}
           />
 
+          {/* Material Alias */}
+          <FormField
+            control={control}
+            name="materialAlias"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>소재 별칭</FormLabel>
+                <FormControl>
+                  <Input placeholder="소재 별칭 입력" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Vendor Name */}
           <FormField
             control={control}
@@ -129,45 +144,6 @@ export function HeaderSection() {
                   <Button type="button" variant="outline" className="shrink-0">
                     조회
                   </Button>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Price */}
-          <FormField
-            control={control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>단가 (Price)</FormLabel>
-                <div className="flex gap-2">
-                  <FormField
-                    control={control}
-                    name="currency"
-                    render={({ field: currencyField }) => (
-                      <Select
-                        onValueChange={currencyField.onChange}
-                        value={currencyField.value}
-                        defaultValue={currencyField.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="w-[80px]">
-                            <SelectValue placeholder="단위" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="KRW">₩</SelectItem>
-                          <SelectItem value="USD">$</SelectItem>
-                          <SelectItem value="CNY">¥</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <FormControl>
-                    <Input type="number" placeholder="0" {...field} />
-                  </FormControl>
                 </div>
                 <FormMessage />
               </FormItem>

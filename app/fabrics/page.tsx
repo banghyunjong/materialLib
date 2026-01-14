@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Plus, FileText, ExternalLink } from "lucide-react"
+import { Search, Plus, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -98,6 +98,7 @@ export default function FabricListPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        {/* Fabric List Table */}
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
@@ -124,7 +125,11 @@ export default function FabricListPage() {
               </TableRow>
             ) : (
               filteredFabrics.map((fabric) => (
-                <TableRow key={fabric.id} className="hover:bg-slate-50/50">
+                <TableRow 
+                  key={fabric.id} 
+                  className="hover:bg-slate-50/50 cursor-pointer"
+                  onClick={() => router.push(`/fabrics/${fabric.id}`)}
+                >
                   <TableCell className="font-mono text-xs font-bold text-slate-600">
                     {fabric.fabric_code || "-"}
                   </TableCell>
@@ -139,17 +144,9 @@ export default function FabricListPage() {
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(fabric.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/order/create?fabricId=${fabric.id}`)}
-                    >
-                      <FileText className="w-4 h-4 mr-1" />
-                      발주
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                       <Link href={`/order/create?fabricId=${fabric.id}`} target="_blank">
+                  <TableCell className="text-right space-x-2" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" asChild title="새창으로 보기">
+                       <Link href={`/fabrics/${fabric.id}`} target="_blank">
                           <ExternalLink className="w-4 h-4" />
                        </Link>
                     </Button>
