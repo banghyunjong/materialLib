@@ -25,6 +25,9 @@ interface Fabric {
   category_major: string
   category_middle: string
   created_at: string
+  original_spec_text: string
+  search_text: string
+  specs: any // JSONB
 }
 
 export default function FabricListPage() {
@@ -56,14 +59,26 @@ export default function FabricListPage() {
   }
 
   const filteredFabrics = fabrics.filter((f) => {
-    const term = searchTerm.toLowerCase()
-    return (
-      (f.art_no && f.art_no.toLowerCase().includes(term)) ||
-      (f.vendor_name && f.vendor_name.toLowerCase().includes(term)) ||
-      (f.fabric_code && f.fabric_code.toLowerCase().includes(term)) ||
-      (f.category_major && f.category_major.toLowerCase().includes(term)) ||
-      (f.category_middle && f.category_middle.toLowerCase().includes(term))
-    )
+    const terms = searchTerm.toLowerCase().split(/\s+/).filter(Boolean) // Split by whitespace
+    if (terms.length === 0) return true
+
+    // Check if ALL terms match (AND condition)
+    return terms.every(term => {
+      // Universal Search via search_text
+      if (f.search_text && f.search_text.toLowerCase().includes(term)) {
+        return true
+      }
+
+      // Fallback for legacy data
+      return (
+        (f.art_no && f.art_no.toLowerCase().includes(term)) ||
+        (f.vendor_name && f.vendor_name.toLowerCase().includes(term)) ||
+        (f.fabric_code && f.fabric_code.toLowerCase().includes(term)) ||
+        (f.category_major && f.category_major.toLowerCase().includes(term)) ||
+        (f.category_middle && f.category_middle.toLowerCase().includes(term)) ||
+        (f.original_spec_text && f.original_spec_text.toLowerCase().includes(term))
+      )
+    })
   })
 
   return (
@@ -86,7 +101,7 @@ export default function FabricListPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="품명, 거래처, 원단코드, 분류 등 통합 검색..."
+            placeholder="품명, 거래처, 원단스펙(AI분석 원본) 등 통합 검색..."
             className="pl-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -106,6 +121,7 @@ export default function FabricListPage() {
               <TableHead>품명 (Art No)</TableHead>
               <TableHead>거래처</TableHead>
               <TableHead>분류</TableHead>
+              <TableHead>상세 스펙 (AI 분석)</TableHead>
               <TableHead>등록일</TableHead>
               <TableHead className="text-right">작업</TableHead>
             </TableRow>
@@ -113,18 +129,23 @@ export default function FabricListPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10">
+                <TableCell colSpan={7} className="text-center py-10">
                   로딩 중...
                 </TableCell>
               </TableRow>
             ) : filteredFabrics.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                   검색 결과가 없습니다.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredFabrics.map((fabric) => (
+              filteredFabrics.map((fabric) => {
+                const specs = fabric.specs || {}
+                const phys = specs.physical_spec || {}
+                const yarn = specs.yarn_spec || {}
+                
+                return (
                 <TableRow 
                   key={fabric.id} 
                   className="hover:bg-slate-50/50 cursor-pointer"
@@ -141,6 +162,34 @@ export default function FabricListPage() {
                       <span className="text-xs text-muted-foreground pl-1">{fabric.category_middle}</span>
                     </div>
                   </TableCell>
+                  {/* Detailed Specs Column */}
+                  <TableCell>
+                    <div className="flex flex-col gap-1 text-[11px] text-slate-600">
+                       {phys.density_total && (
+                         <div className="flex items-center gap-1">
+                           <span className="text-slate-400 w-8">Density</span>
+                           <span className="font-medium">{phys.density_total}T</span>
+                         </div>
+                       )}
+                       {phys.weight_gsm && (
+                         <div className="flex items-center gap-1">
+                           <span className="text-slate-400 w-8">Weight</span>
+                           <span className="font-medium">{phys.weight_gsm} GSM</span>
+                         </div>
+                       )}
+                       {(yarn.warp?.denier || yarn.weft?.denier) && (
+                         <div className="flex items-center gap-1">
+                           <span className="text-slate-400 w-8">Yarn</span>
+                           <span className="font-medium text-[10px] text-slate-500">
+                             {yarn.warp?.denier}D / {yarn.weft?.denier}D
+                           </span>
+                         </div>
+                       )}
+                       {!phys.density_total && !phys.weight_gsm && !yarn.warp && (
+                         <span className="text-slate-300">-</span>
+                       )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {new Date(fabric.created_at).toLocaleDateString()}
                   </TableCell>
@@ -152,7 +201,7 @@ export default function FabricListPage() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))
+              )})
             )}
           </TableBody>
         </Table>

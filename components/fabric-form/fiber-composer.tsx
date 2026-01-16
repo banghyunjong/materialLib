@@ -42,14 +42,16 @@ const FIBER_CODES = [
   { code: "LI", label: "Linen" },
   { code: "WO", label: "Wool" },
   { code: "SE", label: "Silk" },
-  { code: "PES", label: "Polyester" },
-  { code: "PA", label: "Polyamide (Nylon)" },
+  { code: "PE", label: "Polyester" },
+  { code: "NA", label: "Nylon" },
   { code: "PU", label: "Polyurethane" },
   { code: "EL", label: "Elastane (Spandex)" },
-  { code: "PAN", label: "Acrylic" },
-  { code: "CV", label: "Viscose" },
-  { code: "CMD", label: "Modal" },
-  { code: "CLY", label: "Lyocell" },
+  { code: "AC", label: "Acrylic" },
+  { code: "VI", label: "Viscose" },
+  { code: "MD", label: "Modal" },
+  { code: "TE", label: "Tencel (Lyocell)" },
+  { code: "MI", label: "Microfiber" },
+  { code: "CA", label: "Cashmere" },
 ]
 
 const FABRIC_PROPERTIES = [
@@ -306,13 +308,27 @@ export function FiberComposer() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left: Raw JSON View */}
-            <div className="space-y-2">
-               <label className="text-[10px] font-semibold text-slate-500">JSON Data (Read Only)</label>
-               <textarea 
-                  className="w-full h-[450px] p-4 text-xs font-mono bg-slate-900 text-green-400 rounded-lg border-0 focus:ring-1 focus:ring-green-500 resize-none leading-relaxed"
-                  value={JSON.stringify(specs, null, 2)}
-                  readOnly
-               />
+            <div className="space-y-4 h-full flex flex-col">
+               <div className="space-y-2 flex-1">
+                  <label className="text-[10px] font-semibold text-slate-500">JSON Data (Read Only)</label>
+                  <textarea 
+                      className="w-full h-[350px] p-4 text-xs font-mono bg-slate-900 text-green-400 rounded-lg border-0 focus:ring-1 focus:ring-green-500 resize-none leading-relaxed"
+                      value={JSON.stringify(specs, null, 2)}
+                      readOnly
+                  />
+               </div>
+               
+               {/* AI Analysis Result */}
+               {specs.meta?.ai_analysis_kr && (
+                 <div className="bg-amber-50/50 border border-amber-100 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-bold text-amber-700">🤖 AI 종합 분석</span>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                       {specs.meta.ai_analysis_kr}
+                    </p>
+                 </div>
+               )}
             </div>
 
             {/* Right: Smart Editor Form */}
@@ -331,7 +347,7 @@ export function FiberComposer() {
                       <FormItem>
                         <FormLabel className="text-xs">소재 (Material)</FormLabel>
                         <FormControl>
-                          <Input placeholder="ex. Nylon" className="h-8 text-xs bg-white" {...field} />
+                          <Input placeholder="ex. Nylon" className="h-8 text-xs bg-white" {...field} value={field.value ?? ""} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -343,7 +359,7 @@ export function FiberComposer() {
                       <FormItem>
                         <FormLabel className="text-xs">구조 (Construction)</FormLabel>
                         <FormControl>
-                          <Input placeholder="ex. Taslan" className="h-8 text-xs bg-white" {...field} />
+                          <Input placeholder="ex. Taslan" className="h-8 text-xs bg-white" {...field} value={field.value ?? ""} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -391,7 +407,7 @@ export function FiberComposer() {
                         <FormLabel className="text-xs">밀도 (Total Density)</FormLabel>
                         <FormControl>
                            <div className="relative">
-                             <Input placeholder="ex. 228" className="h-8 text-xs bg-white pr-6" {...field} />
+                             <Input placeholder="ex. 228" className="h-8 text-xs bg-white pr-6" {...field} value={field.value ?? ""} />
                              <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">T</span>
                            </div>
                         </FormControl>
@@ -409,7 +425,7 @@ export function FiberComposer() {
                       <FormItem>
                         <FormLabel className="text-xs">규격 (Width)</FormLabel>
                         <FormControl>
-                          <Input placeholder="ex. 58/60" className="h-8 text-xs bg-white" {...field} />
+                          <Input placeholder="ex. 58/60" className="h-8 text-xs bg-white" {...field} value={field.value ?? ""} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -422,7 +438,7 @@ export function FiberComposer() {
                         <FormLabel className="text-xs">중량 (Weight)</FormLabel>
                         <FormControl>
                            <div className="relative">
-                             <Input placeholder="ex. 120" className="h-8 text-xs bg-white pr-8" {...field} />
+                             <Input placeholder="ex. 120" className="h-8 text-xs bg-white pr-8" {...field} value={field.value ?? ""} />
                              <span className="absolute right-2 top-2 text-[10px] text-muted-foreground">GSM</span>
                            </div>
                         </FormControl>
@@ -446,7 +462,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Denier</FormLabel>
                               <FormControl>
-                                <Input placeholder="70" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="70" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -458,7 +474,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Filament</FormLabel>
                               <FormControl>
-                                <Input placeholder="36" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="36" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -470,7 +486,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Process</FormLabel>
                               <FormControl>
-                                <Input placeholder="FDY" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="FDY" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -482,7 +498,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Luster</FormLabel>
                               <FormControl>
-                                <Input placeholder="FD" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="FD" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -501,7 +517,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Denier</FormLabel>
                               <FormControl>
-                                <Input placeholder="160" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="160" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -513,7 +529,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Filament</FormLabel>
                               <FormControl>
-                                <Input placeholder="96" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="96" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -525,7 +541,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Process</FormLabel>
                               <FormControl>
-                                <Input placeholder="ATY" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="ATY" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -537,7 +553,7 @@ export function FiberComposer() {
                             <FormItem className="col-span-1 space-y-0">
                               <FormLabel className="text-[9px] text-slate-500">Luster</FormLabel>
                               <FormControl>
-                                <Input placeholder="FD" className="h-6 text-xs px-1" {...field} />
+                                <Input placeholder="FD" className="h-6 text-xs px-1" {...field} value={field.value ?? ""} />
                               </FormControl>
                             </FormItem>
                           )}
@@ -568,18 +584,18 @@ export function FiberComposer() {
                   />
                </div>
 
-               {/* 4. Summary KR */}
+               {/* 4. Etc Info */}
                <div className="pt-2 border-t border-dashed">
                   <FormField
                     control={control}
-                    name="specs.meta.summary_kr"
+                    name="specs.meta.etc_info"
                     render={({ field }) => (
                       <FormItem>
-                         <FormLabel className="text-xs font-bold text-blue-600">분석 요약 (한글)</FormLabel>
+                         <FormLabel className="text-xs font-bold text-slate-500">기타 / 미분류 정보 (Etc)</FormLabel>
                          <FormControl>
                            <textarea 
-                             className="w-full min-h-[60px] p-2 text-xs bg-white border rounded-md focus:ring-1 focus:ring-blue-500 resize-none"
-                             placeholder="AI 분석 요약 내용"
+                             className="w-full min-h-[60px] p-2 text-xs bg-white border rounded-md focus:ring-1 focus:ring-slate-300 resize-none"
+                             placeholder="AI가 분석하지 못한 나머지 정보나 추가 메모"
                              {...field}
                            />
                          </FormControl>

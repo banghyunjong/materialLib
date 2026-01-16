@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
 
 export function HeaderSection() {
   const { control, getValues, setError, clearErrors } = useFormContext()
@@ -63,7 +64,7 @@ export function HeaderSection() {
     <Card>
       <CardContent className="pt-6 space-y-6">
         {/* Row 2: Art No, Material Alias, Vendor */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Art No */}
           <FormField
             control={control}
@@ -76,6 +77,7 @@ export function HeaderSection() {
                     <Input 
                       placeholder="원단 품명" 
                       {...field} 
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         field.onChange(e)
                         setDupStatus("idle") // Reset status on change
@@ -123,7 +125,7 @@ export function HeaderSection() {
               <FormItem>
                 <FormLabel>소재 별칭</FormLabel>
                 <FormControl>
-                  <Input placeholder="소재 별칭 입력" {...field} />
+                  <Input placeholder="소재 별칭 입력" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,13 +141,36 @@ export function HeaderSection() {
                 <FormLabel>거래처</FormLabel>
                 <div className="flex gap-2">
                   <FormControl>
-                    <Input placeholder="거래처명" {...field} />
+                    <Input placeholder="거래처명" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <Button type="button" variant="outline" className="shrink-0">
                     조회
                   </Button>
                 </div>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Is Fixed Material Switch */}
+          <FormField
+            control={control}
+            name="isFixedMaterial"
+            render={({ field }) => (
+              <FormItem>
+                 <FormLabel>고정화 소재</FormLabel>
+                 <FormControl>
+                    <div className="flex h-10 items-center rounded-md border border-input bg-transparent px-3 py-2">
+                       <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {field.value ? "고정 소재" : "일반 소재"}
+                        </span>
+                    </div>
+                 </FormControl>
               </FormItem>
             )}
           />

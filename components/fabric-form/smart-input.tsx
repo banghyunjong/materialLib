@@ -45,6 +45,11 @@ export function SmartInput() {
       if (data.categoryMajor) {
          setValue("categoryMajor", data.categoryMajor)
       }
+      
+      // Update Compositions (Mix Ratio)
+      if (data.compositions && Array.isArray(data.compositions) && data.compositions.length > 0) {
+         setValue("compositions", data.compositions)
+      }
 
       setIsOpen(false)
       setInput("") 
@@ -86,16 +91,6 @@ export function SmartInput() {
                    {originalSpec}
                  </div>
                </div>
-               
-               {/* Updated Path for summary_kr */}
-               {specs.meta?.summary_kr && (
-                 <div>
-                   <div className="text-[10px] text-muted-foreground mb-1 font-medium">분석 요약 (KR)</div>
-                   <div className="bg-blue-50/50 p-2 rounded border border-blue-100 text-blue-800 text-xs font-medium">
-                     {specs.meta.summary_kr}
-                   </div>
-                 </div>
-               )}
              </div>
           </div>
         )}

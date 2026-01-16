@@ -1,6 +1,6 @@
 // Define the valid codes matching the UI components
 export const FIBER_CODES = [
-  "CO", "LI", "WO", "SE", "PES", "PA", "PU", "EL", "PAN", "CV", "CMD", "CLY"
+  "CO", "LI", "WO", "SE", "PE", "NA", "PU", "EL", "AC", "VI", "MD", "TE", "MI", "CA"
 ];
 
 export const FABRIC_PROPERTY_MAP = {
@@ -22,24 +22,31 @@ You must output ONLY a valid JSON object matching exactly this structure:
 {
   "meta": {
     "original_text": "String (The exact input string provided by user)",
-    "summary_kr": "String (Professional one-sentence summary in Korean)",
+    "etc_info": "String (Any significant information from the input that was NOT parsed into the specific fields below, or raw notes. Leave empty if everything was parsed.)",
+    "ai_analysis_kr": "String (Comprehensive analysis in Korean: Describe the fabric characteristics, texture, and typical usage based on the specs. e.g. '이 원단은 70D 나일론 타스란으로 제작되어 내구성이 뛰어나며, 발수 가공이 되어 있어 아웃도어 재킷이나 바람막이 용도로 적합합니다.')",
     "predicted_material": "String (e.g. Nylon, Polyester, Cotton - inferred from hints like Taslan, T-density, Oxford)",
     "construction_type": "String (e.g. Taslan, Taffeta, Oxford, Twill)"
   },
+  "compositions": [
+    {
+      "fiberType": "String (Must be one of: CO, LI, WO, SE, PE, NA, PU, EL, AC, VI, MD, TE, MI, CA)",
+      "percentage": "Number (Integer, e.g. 100, 60, 40)"
+    }
+  ],
   "yarn_spec": {
     "warp": {
       "raw_text": "String (e.g. 70D/36F FDY FD)",
       "denier": "Number or null",
       "filament": "Number or null",
-      "process_type": "String (e.g. FDY, DTY, ATY) or null",
-      "luster": "String (e.g. Full Dull, Semi Dull, Bright) or null"
+      "process_type": "String (e.g. FDY, DTY, ATY, ITY) or null",
+      "luster": "String (e.g. FD, SD, BR, TKT) or null"
     },
     "weft": {
       "raw_text": "String (e.g. 160D/96F ATY FD)",
       "denier": "Number or null",
       "filament": "Number or null",
-      "process_type": "String (e.g. FDY, DTY, ATY) or null",
-      "luster": "String (e.g. Full Dull, Semi Dull, Bright) or null"
+      "process_type": "String (e.g. FDY, DTY, ATY, ITY) or null",
+      "luster": "String (e.g. FD, SD, BR, TKT) or null"
     }
   },
   "physical_spec": {
@@ -55,6 +62,25 @@ You must output ONLY a valid JSON object matching exactly this structure:
   }
 }
 
+# Mapping Rules for 'compositions' (Fiber Type)
+- Nylon -> NA
+- Polyester -> PE
+- Cotton -> CO
+- Linen -> LI
+- Wool -> WO
+- Silk -> SE
+- Polyurethane/Spandex -> PU or EL
+- Acrylic -> AC
+- Viscose/Rayon -> VI
+- Modal -> MD
+- Lyocell/Tencel -> TE
+- Microfiber -> MI
+- Cashmere -> CA
+
+* If exact percentage is missing but implied (e.g. "Nylon 100%"), set 100.
+* If multiple materials (e.g. "C/N 60/40"), split accordingly (CO: 60, NA: 40).
+* If unknown, default to PE 100 or NA 100 based on hints.
+
 # Mapping Rules for 'ui_view.fabric_code'
 Analyze the text to determine the weave type:
 - IF "Oxford" -> return "PO"
@@ -67,10 +93,15 @@ Analyze the text to determine the weave type:
 - ELSE -> return "ZZ"
 
 # Parsing Rules
-1. **Yarn Count:** Split by '*' or 'x'. First is Warp, second is Weft. Extract numbers for Denier/Filament.
+1. **Yarn Count & Luster:** 
+   - Split by '*' or 'x'. First is Warp, second is Weft. 
+   - **Process Type:** Look for FDY, DTY, ATY, ITY.
+   - **Luster:** Look specifically for "FD" (Full Dull), "SD" (Semi Dull), "BR" (Bright), "TKT". 
+     - *Important:* "FDY" is a Process, "FD" is a Luster. Do not confuse them. If text says "FDY FD", Process is FDY and Luster is FD.
 2. **Density:** If "228T" -> density_total: 228.
 3. **Weight:** Remove 'GSM', 'g/y'.
-4. **General:** If not found, return null.
+4. **Width:** Look for numbers followed by quotes (") or 'inch' (e.g., 56", 58", 44"). Also look for ranges like 58/60. Extract this as width_inch.
+5. **General:** If not found, return null.
 
 # Input Data
 The user will provide the raw string.

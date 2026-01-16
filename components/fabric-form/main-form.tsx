@@ -25,6 +25,7 @@ const formSchema = z.object({
   vendorName: z.string().default(""),
   categoryMajor: z.string().default(""),
   categoryMiddle: z.string().default(""),
+  isFixedMaterial: z.boolean().default(false),
   
   // Physical properties consolidated into JSON
   specs: z.any().default({}),
@@ -69,6 +70,7 @@ export default function FabricForm({ fabricId }: FabricFormProps) {
       vendorName: "",
       categoryMajor: "",
       categoryMiddle: "",
+      isFixedMaterial: false,
       specs: {},
       
       compositions: [{ fiberType: "PES", percentage: 100 }],
@@ -135,6 +137,7 @@ export default function FabricForm({ fabricId }: FabricFormProps) {
           vendorName: master.vendor_name || "",
           categoryMajor: master.category_major || "",
           categoryMiddle: master.category_middle || "",
+          isFixedMaterial: master.is_fixed_material || false,
           specs: master.specs || {},
           
           compositions: compositions?.map(c => ({ fiberType: c.fiber_type, percentage: c.percentage })) || [],
@@ -171,6 +174,18 @@ export default function FabricForm({ fabricId }: FabricFormProps) {
 
     try {
       let targetId = fabricId
+      
+      // Generate search_text for full-text search
+      const searchText = [
+        values.artNo,
+        values.materialAlias,
+        values.vendorName,
+        values.categoryMajor,
+        values.categoryMiddle,
+        values.originalSpec,
+        JSON.stringify(values.specs),
+        values.compositions.map(c => `${c.fiberType} ${c.percentage}%`).join(" ")
+      ].filter(Boolean).join(" ");
 
       if (fabricId) {
         // UPDATE Logic
@@ -182,8 +197,10 @@ export default function FabricForm({ fabricId }: FabricFormProps) {
             vendor_name: values.vendorName,
             category_major: values.categoryMajor,
             category_middle: values.categoryMiddle,
+            is_fixed_material: values.isFixedMaterial,
             specs: values.specs,
             original_spec_text: values.originalSpec,
+            search_text: searchText,
           })
           .eq('id', fabricId)
 
@@ -205,9 +222,11 @@ export default function FabricForm({ fabricId }: FabricFormProps) {
             vendor_name: values.vendorName,
             category_major: values.categoryMajor,
             category_middle: values.categoryMiddle,
+            is_fixed_material: values.isFixedMaterial,
             // Physical Properties
             specs: values.specs,
             original_spec_text: values.originalSpec,
+            search_text: searchText,
           })
           .select()
           .single()
